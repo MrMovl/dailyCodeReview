@@ -96,7 +96,7 @@ view model =
 
 printDevs : List Dev -> Html Msg
 printDevs devs =
-    div [] (List.map (\dev -> dev.name ++ "\n" |> text) devs)
+    div [] (List.map (\dev -> div [] [ text dev.name, br [] [] ]) devs)
 
 
 toDevs : List Int -> List Dev
@@ -124,11 +124,6 @@ flipedModulo =
 flipedDevide : Float -> Float -> Float
 flipedDevide =
     flip (/)
-
-
-printTimeList : List Int -> Html Msg
-printTimeList list =
-    div [] (List.map (\x -> x |> toString |> (++) "\n" |> text) list)
 
 
 nextTwoWeeks : Time -> List Time
