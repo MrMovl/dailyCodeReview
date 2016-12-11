@@ -5,6 +5,22 @@ import CSS
 import Date exposing (Date)
 import Time exposing (Time)
 import Task
+import Array
+
+
+{-
+   umwandeln in DaysSinceEpoch, modulo mit devs.length, dadurch Liste von Indizes zum rendern der Dev Felder
+
+-}
+
+
+type alias Dev =
+    { name : String, color : String }
+
+
+msPerDay : Time
+msPerDay =
+    86400000
 
 
 main : Program Never Model Msg
@@ -27,12 +43,19 @@ type alias Model =
 
 init : ( Model, Cmd Msg )
 init =
-    ( { today = 0 |> Date.fromTime }, Task.perform Today Date.now )
+    ( { today = 0 }, Task.perform Today Time.now )
 
 
-devs : List String
+devs : Array.Array Dev
 devs =
-    [ "Tomke", "Gregor", "Jonas", "Jens", "Tim", "Daniel" ]
+    [ { name = "Tomke", color = "Green" }
+    , { name = "Gregor", color = "Purple" }
+    , { name = "Jonas", color = "Red" }
+    , { name = "Jens", color = "Black" }
+    , { name = "Tim", color = "Yellow" }
+    , { name = "Daniel", color = "Orange" }
+    ]
+        |> Array.fromList
 
 
 
@@ -40,7 +63,7 @@ devs =
 
 
 type Msg
-    = Today Date
+    = Today Time
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -67,27 +90,54 @@ view : Model -> Html Msg
 view model =
     div [ CSS.body ]
         [ h1 [ CSS.header ] [ text "Daily Code Review" ]
-        , model.today |> prettyDate |> text
+        , model.today |> nextTwoWeeks |> toDays |> toDevs |> printDevs
         ]
 
 
-nextTwoWeeks : Date -> List Date
+printDevs : List Dev -> Html Msg
+printDevs devs =
+    div [] (List.map (\dev -> dev.name ++ "\n" |> text) devs)
+
+
+toDevs : List Int -> List Dev
+toDevs =
+    let
+        devCount =
+            Array.length devs
+    in
+        List.map (\day -> day |> flipedModulo devCount |> getDev devs)
+
+
+getDev devs i =
+    Array.get i devs |> Maybe.withDefault { name = "Tomke", color = "Green" }
+
+
+toDays : List Time -> List Int
+toDays =
+    List.map (\x -> Time.inHours x |> flipedDevide 24 |> floor)
+
+
+flipedModulo =
+    flip (%)
+
+
+flipedDevide : Float -> Float -> Float
+flipedDevide =
+    flip (/)
+
+
+printTimeList : List Int -> Html Msg
+printTimeList list =
+    div [] (List.map (\x -> x |> toString |> (++) "\n" |> text) list)
+
+
+nextTwoWeeks : Time -> List Time
 nextTwoWeeks today =
     let
         fourteenDays =
             List.range 0 13
-        fromToday = addDay today
     in
-        List.map addDay fourteenDays
-
-
-addDay : Date -> Int -> Date
-addDay today i =
-    
-
-dayList : Date -> Html Msg
-dayList date =
-    div [] [ date |> prettyDate |> text ]
+        List.map (\number -> today + ((toFloat number) * msPerDay)) fourteenDays
 
 
 prettyDate : Date -> String
