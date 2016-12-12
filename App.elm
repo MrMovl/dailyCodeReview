@@ -3,12 +3,9 @@ module App exposing (..)
 import Html exposing (..)
 import CSS
 import Time exposing (Time)
+import Date
 import Task
 import Array exposing (Array)
-
-
-type alias Dev =
-    { name : String, color : String, fontColor : String }
 
 
 msPerDay : Time
@@ -28,6 +25,10 @@ main =
 
 
 -- MODEL
+
+
+type alias Dev =
+    { name : String, color : String, fontColor : String }
 
 
 type alias Model =
@@ -83,8 +84,19 @@ view : Model -> Html Msg
 view model =
     div [ CSS.body ]
         [ h1 [ CSS.header ] [ text "Daily Code Review" ]
-        , model.today |> nextTwoWeeks |> timeToDays |> dayToDevs |> printDevs
+        , div [ CSS.column ] [ model.today |> nextTwoWeeks |> timeToDays |> daysToDevs |> printDevs ]
+        , div [ CSS.column ] [ model.today |> nextTwoWeeks |> printDays ]
         ]
+
+
+printDays : List Time -> Html Msg
+printDays days =
+    div [] (List.map printDay days)
+
+
+printDay : Time -> Html Msg
+printDay time =
+    div [] [ time |> Date.fromTime |> prettyDate |> text ]
 
 
 nextTwoWeeks : Time -> List Time
@@ -101,8 +113,8 @@ timeToDays =
     List.map (\x -> Time.inHours x |> flippedDevide 24 |> floor)
 
 
-dayToDevs : List Int -> List (Maybe Dev)
-dayToDevs =
+daysToDevs : List Int -> List (Maybe Dev)
+daysToDevs =
     let
         devCount =
             Array.length devs
@@ -122,12 +134,13 @@ printDev : Maybe Dev -> Html Msg
 printDev dev =
     case dev of
         Just dev ->
-            div 
-                [ CSS.backgroundColor dev.color dev.fontColor ] 
+            div
+                [ CSS.backgroundColor dev.color dev.fontColor ]
                 [ text dev.name, br [] [] ]
 
         Nothing ->
             div [] [ text "I don't know that guy" ]
+
 
 
 --Helper
@@ -146,3 +159,11 @@ flippedDevide =
 flippedGet : Array a -> Int -> Maybe a
 flippedGet =
     flip Array.get
+
+
+prettyDate : Date.Date -> String
+prettyDate date =
+    if (date |> Date.day |> toString) == "NaN" then
+        "That's no date!"
+    else
+        (toString (Date.day date)) ++ ". " ++ (toString (Date.month date)) ++ " " ++ (toString (Date.year date))
