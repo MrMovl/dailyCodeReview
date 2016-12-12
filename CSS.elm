@@ -53,3 +53,11 @@ header : Html.Attribute a
 header =
     style
         []
+
+
+backgroundColor : String -> String -> Html.Attribute a
+backgroundColor color fontColor =
+    style 
+        [ ("backgroundColor", color) 
+        , ("color", fontColor)
+        ]

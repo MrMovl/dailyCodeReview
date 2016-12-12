@@ -2,20 +2,13 @@ module App exposing (..)
 
 import Html exposing (..)
 import CSS
-import Date exposing (Date)
 import Time exposing (Time)
 import Task
-import Array
-
-
-{-
-   umwandeln in DaysSinceEpoch, modulo mit devs.length, dadurch Liste von Indizes zum rendern der Dev Felder
-
--}
+import Array exposing (Array)
 
 
 type alias Dev =
-    { name : String, color : String }
+    { name : String, color : String, fontColor : String }
 
 
 msPerDay : Time
@@ -48,12 +41,12 @@ init =
 
 devs : Array.Array Dev
 devs =
-    [ { name = "Tomke", color = "Green" }
-    , { name = "Gregor", color = "Purple" }
-    , { name = "Jonas", color = "Red" }
-    , { name = "Jens", color = "Black" }
-    , { name = "Tim", color = "Yellow" }
-    , { name = "Daniel", color = "Orange" }
+    [ { name = "Tomke", color = "Green", fontColor = "Black" }
+    , { name = "Gregor", color = "Purple", fontColor = "White" }
+    , { name = "Jonas", color = "Red", fontColor = "Black" }
+    , { name = "Jens", color = "Black", fontColor = "White" }
+    , { name = "Tim", color = "Yellow", fontColor = "Black" }
+    , { name = "Daniel", color = "Orange", fontColor = "Black" }
     ]
         |> Array.fromList
 
@@ -90,40 +83,8 @@ view : Model -> Html Msg
 view model =
     div [ CSS.body ]
         [ h1 [ CSS.header ] [ text "Daily Code Review" ]
-        , model.today |> nextTwoWeeks |> toDays |> toDevs |> printDevs
+        , model.today |> nextTwoWeeks |> timeToDays |> dayToDevs |> printDevs
         ]
-
-
-printDevs : List Dev -> Html Msg
-printDevs devs =
-    div [] (List.map (\dev -> div [] [ text dev.name, br [] [] ]) devs)
-
-
-toDevs : List Int -> List Dev
-toDevs =
-    let
-        devCount =
-            Array.length devs
-    in
-        List.map (\day -> day |> flipedModulo devCount |> getDev devs)
-
-
-getDev devs i =
-    Array.get i devs |> Maybe.withDefault { name = "Tomke", color = "Green" }
-
-
-toDays : List Time -> List Int
-toDays =
-    List.map (\x -> Time.inHours x |> flipedDevide 24 |> floor)
-
-
-flipedModulo =
-    flip (%)
-
-
-flipedDevide : Float -> Float -> Float
-flipedDevide =
-    flip (/)
 
 
 nextTwoWeeks : Time -> List Time
@@ -135,6 +96,53 @@ nextTwoWeeks today =
         List.map (\number -> today + ((toFloat number) * msPerDay)) fourteenDays
 
 
-prettyDate : Date -> String
-prettyDate date =
-    (toString (Date.day date)) ++ ". " ++ (toString (Date.month date)) ++ " " ++ (toString (Date.year date))
+timeToDays : List Time -> List Int
+timeToDays =
+    List.map (\x -> Time.inHours x |> flippedDevide 24 |> floor)
+
+
+dayToDevs : List Int -> List (Maybe Dev)
+dayToDevs =
+    let
+        devCount =
+            Array.length devs
+
+        indexToDev day =
+            day |> flippedModulo devCount |> flippedGet devs
+    in
+        List.map indexToDev
+
+
+printDevs : List (Maybe Dev) -> Html Msg
+printDevs devs =
+    div [] (List.map printDev devs)
+
+
+printDev : Maybe Dev -> Html Msg
+printDev dev =
+    case dev of
+        Just dev ->
+            div 
+                [ CSS.backgroundColor dev.color dev.fontColor ] 
+                [ text dev.name, br [] [] ]
+
+        Nothing ->
+            div [] [ text "I don't know that guy" ]
+
+
+--Helper
+
+
+flippedModulo : Int -> Int -> Int
+flippedModulo =
+    flip (%)
+
+
+flippedDevide : Float -> Float -> Float
+flippedDevide =
+    flip (/)
+
+
+flippedGet : Array a -> Int -> Maybe a
+flippedGet =
+    flip Array.get
