@@ -13,6 +13,11 @@ msPerDay =
     86400000
 
 
+dayRange : Int
+dayRange =
+    15
+
+
 main : Program Never Model Msg
 main =
     Html.program
@@ -84,9 +89,51 @@ view : Model -> Html Msg
 view model =
     div [ CSS.body ]
         [ h1 [ CSS.header ] [ text "Daily Code Review" ]
-        , div [ CSS.column ] [ model.today |> nextTwoWeeks |> timeToDays |> daysToDevs |> printDevs ]
-        , div [ CSS.column ] [ model.today |> nextTwoWeeks |> printDays ]
+        , div [ CSS.column ] [ model.today |> todayToPrintedDevs ]
+        , div [ CSS.column ] [ model.today |> todayToPrintedDays ]
         ]
+
+
+todayToPrintedDays : Time -> Html Msg
+todayToPrintedDays today =
+    today |> nextTwoWeeks |> withoutWeekends |> printDays
+
+
+todayToPrintedDevs : Time -> Html Msg
+todayToPrintedDevs today =
+    today
+        |> nextTwoWeeks
+        |> accountForWeekends
+        |> timeToDays
+        |> daysToDevs
+        |> printDevs
+
+
+accountForWeekends : List Time -> List Time
+accountForWeekends days =
+    List.foldr skipWeekends days days
+
+
+skipWeekends : Time -> List Time -> List Time
+skipWeekends day days =
+    if isWorkday day then
+        days
+    else
+        days |> List.reverse |> List.drop 1 |> List.reverse
+
+
+withoutWeekends : List Time -> List Time
+withoutWeekends days =
+    List.filter (\x -> x |> isWorkday) days
+
+
+isWorkday : Time -> Bool
+isWorkday time =
+    let
+        day =
+            time |> Date.fromTime |> Date.dayOfWeek
+    in
+        day /= Date.Sun && day /= Date.Sat
 
 
 printDays : List Time -> Html Msg
@@ -103,9 +150,17 @@ nextTwoWeeks : Time -> List Time
 nextTwoWeeks today =
     let
         fourteenDays =
-            List.range 0 13
+            List.range 0 dayRange
+
+        indexToDayFromToday =
+            indexToDay today
     in
-        List.map (\number -> today + ((toFloat number) * msPerDay)) fourteenDays
+        List.map indexToDayFromToday fourteenDays
+
+
+indexToDay : Time -> Int -> Time
+indexToDay today i =
+    today + ((toFloat i) * msPerDay)
 
 
 timeToDays : List Time -> List Int
